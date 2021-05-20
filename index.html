@@ -49,7 +49,7 @@
     <script>
     const $ = x => document.querySelector(x)
     
-    const url = "ws://" + window.location.host + "/ws";
+    const url = "wss://" + window.location.host + "/ws";
     const ws = new WebSocket(url);
     
     let name = null
