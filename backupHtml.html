@@ -1,0 +1,131 @@
+<html>
+  <head>
+    <title>VS's Simple chat</title>
+  </head>
+
+  <style>
+  body {
+    font-family: sans-serif;
+  }
+  #chat {
+    text-align: left;
+    background: #f1f1f1;
+    width: 41%;
+    height: 500px;
+    min-height: 300px;
+    padding: 20px;
+    margin: 0;
+    overflow-y: scroll;
+    white-space: pre-wrap;
+    word-break: keep-all
+  }
+  input {
+    padding: 5 4px;
+  }
+  #nameBox {
+    width: 5%;
+  }
+  #text {
+    width: 40.8%;
+  }
+  #sendBtn {
+    padding: 6px 4px;
+    background-color: #22a7f0;
+    border: 1px solid black;
+  }
+  .chatMessage {
+    border-bottom: 1px solid #cacaca;
+  }
+  green {
+    color: rgb(0, 138, 41);
+  }
+  red {
+    color: red;
+  }
+  </style>
+
+  <body>
+    <center>
+      <h1>VS's Simple Chat</h1>
+      <h3></h3>
+      <pre id="chat"></pre>
+      <input placeholder="Type your message here" id="text" type="text" autocomplete="off"><button id="sendBtn">Send</button>
+    </center>
+
+    <script>
+    // sessionStorage.setItem('reloaded', 'yes');
+    
+    const $ = x => document.querySelector(x)
+    const invalidChars = ["<", ">", "­"]
+    const isStringInvalid = (x) => {
+      let truthTable = []
+      invalidChars.forEach(char => truthTable.push(x.includes(char)))
+      return truthTable.includes(true) || x.replace(/ /g, "") === ""
+    } 
+    
+    const url = "wss://" + window.location.host + "/ws";
+    const ws = new WebSocket(url);
+    
+    let name = null
+    let canChangeName = null
+    
+    if (document.cookie != "") {
+      name = document.cookie.split(";")[0]
+      canChangeName = false
+    } else {
+      const askName = () => {
+        name = prompt("Please enter your username")
+        if (isStringInvalid(name)) {
+          alert("Your name cannot be empty and it should not contain > and <")
+          askName()
+        } else {
+          canChangeName = false
+          document.cookie = name + ";"
+        }
+      }
+      askName()
+    }
+    
+    document.querySelector("h3").innerHTML = "You are: " + name;
+
+    const chat = document.getElementById("chat");
+    const text = document.getElementById("text");
+
+    const now = function () {
+      const iso = new Date().toISOString();
+      return iso.split("T")[1].split(".")[0];
+    };
+
+    ws.onmessage = function (msg) {
+      var line =  now() + " " + msg.data + "\n";
+      chat.innerHTML += `<h2 class="chatMessage">` + line + `</h2>`;
+      chat.scrollTop = chat.scrollHeight - chat.clientHeight;
+    };
+    
+    if (document.cookie != "") {
+      canChangeName = false
+    }
+    
+    $("#text").addEventListener("keyup", e => {
+      if (e.key == "Enter") {
+        $("#sendBtn").click()
+      }
+    })
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      if (canChangeName) {
+        if (document.cookie == "") {
+          document.cookie = name + ";"
+          console.log(document.cookie)
+        }
+        canChangeName = !canChangeName
+      }
+      if (isStringInvalid(text.value)) {
+        alert("Your message cannot be empty and it should not contain > and <")
+      }
+      ws.send("[" + name + "]: " + text.value);
+      text.value = "";
+    })
+    </script>
+  </body>
+</html>
